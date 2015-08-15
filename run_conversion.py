@@ -22,7 +22,7 @@ for name, table in source_tables.items():
 
 
 # Drop table for testing purposes
-destination_meta.drop_all(transport.destination_engine)
+# destination_meta.drop_all(transport.destination_engine)
 
 # Begin migration
 source_meta.create_all(transport.destination_engine)
