@@ -4,6 +4,9 @@ from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.sql.schema import MetaData
 from database_credentials import *
 
+# TODO: Make it so that the database source and destination type are interchangeable
+#       meaning that either can be what server type the end user want
+
 
 class Transport:
     def __init__(self):
