@@ -1,4 +1,4 @@
-from converter_config import Transport
+from db_converter import Transport
 
 # Initialize the transport
 transport = Transport()
