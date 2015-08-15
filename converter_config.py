@@ -1,22 +1,42 @@
 from collections import namedtuple
 from sqlalchemy import create_engine
 from sqlalchemy.orm.session import sessionmaker
+from sqlalchemy.sql.schema import MetaData
 from database_credentials import *
 
 
 class Transport:
     def __init__(self, convert_from_sqlite=True):
 
+        self.db_module_string = DB_MODULE_STRING
+        self.db_module = DB_MODULE
+        self.echo = DB_ECHO
+
+        self.db_source_engine = DB_SOURCE_ENGINE
+        self.db_source_user = DB_SOURCE_USER
+        self.db_source_pass = DB_SOURCE_PASS
+        self.db_source_host = DB_SOURCE_HOST
+        self.db_source_port = DB_SOURCE_PORT
+        self.db_source_name = DB_SOURCE_NAME
+
+        self.db_destination_engine = DB_DESTINATION_ENGINE
+        self.db_destination_user = DB_DESTINATION_USER
+        self.db_destination_pass = DB_DESTINATION_PASS
+        self.db_destination_host = DB_DESTINATION_HOST
+        self.db_destination_port = DB_DESTINATION_PORT
+        self.db_destination_name = DB_DESTINATION_NAME
+
         if convert_from_sqlite:
             self.source_engine = create_engine(DB_SQLITE_FILE, echo=DB_ECHO)
         else:
-            self.source_engine = Transport.engine(DB_SOURCE_ENGINE, DB_MODULE_STRING, DB_SOURCE_USER,
-                                                  DB_SOURCE_PASS, DB_SOURCE_HOST,
-                                                  DB_SOURCE_PORT, DB_SOURCE_NAME)
+            self.source_engine = Transport.engine(self.db_source_engine, self.db_module_string, self.db_source_user,
+                                                  self.db_source_pass, self.db_source_host,
+                                                  self.db_source_port, self.db_source_name, self.echo, self.db_module)
 
-        self.destination_engine = Transport.engine(DB_DESTINATION_ENGINE, DB_MODULE_STRING, DB_DESTINATION_USER,
-                                                   DB_DESTINATION_PASS, DB_DESTINATION_HOST,
-                                                   DB_DESTINATION_PORT, DB_DESTINATION_NAME)
+        self.destination_engine = Transport.engine(self.db_destination_engine, self.db_module_string,
+                                                   self.db_destination_user, self.db_destination_pass,
+                                                   self.db_destination_host, self.db_destination_port,
+                                                   self.db_destination_name, self.echo, self.db_module)
 
         source_session = sessionmaker(bind=self.source_engine)
         destination_session = sessionmaker(bind=self.destination_engine)
@@ -32,7 +52,7 @@ class Transport:
         self.sessions.destination = db_destination
 
     @staticmethod
-    def engine(db_type, module, user, passwd, host, port, database):
+    def engine(db_type, module, user, passwd, host, port, database, echo, db_module):
         # if default, the remove it as it will cause connections issues fore mysql ... =/
         if db_type == 'mysql' and port == 3306:
             port = ''
@@ -47,5 +67,36 @@ class Transport:
             host=host,
             port=port,
             db=database
-        ), echo=DB_ECHO, module=DB_MODULE)
+        ), echo=echo, module=db_module)
+
+    def run(self):
+        # Source reflection
+        source_meta = MetaData()
+        source_meta.reflect(bind=self.source_engine)
+        source_tables = source_meta.tables
+
+        source_table_names = [k for k, v in source_tables.items()]
+
+        # Destination Binding
+        destination_meta = MetaData(bind=self.destination_engine)
+        for name, table in source_tables.items():
+            table.metadata = destination_meta
+
+        # pp(source_meta.tables)
+
+        # Drop table for testing purposes
+        # destination_meta.drop_all(transport.destination_engine)
+
+        # Begin migration
+        source_meta.create_all(self.destination_engine)
+
+        source_data = {table: self.sessions.source.query(source_tables[table]).all() for table in source_table_names}
+
+        # pp(source_data)
+
+        for table in source_table_names:
+            for row in source_data[table]:
+                self.sessions.destination.execute(source_tables[table].insert(row))
+
+        self.sessions.destination.commit()
 
