@@ -18,7 +18,7 @@ destination_meta = MetaData(bind=transport.destination_engine)
 for name, table in source_tables.items():
     table.metadata = destination_meta
 
-pp(source_meta.tables)
+# pp(source_meta.tables)
 
 
 # Drop table for testing purposes
