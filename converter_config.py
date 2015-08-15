@@ -6,34 +6,38 @@ from database_credentials import *
 
 
 class Transport:
-    def __init__(self, convert_from_sqlite=True):
+    def __init__(self):
 
         self.db_module_string = DB_MODULE_STRING
         self.db_module = DB_MODULE
         self.echo = DB_ECHO
+        self.convert_from_sqlite = CONVERT_FROM_SQLITE
 
-        self.db_source_engine = DB_SOURCE_ENGINE
+        self.db_source_type = DB_SOURCE_TYPE
         self.db_source_user = DB_SOURCE_USER
         self.db_source_pass = DB_SOURCE_PASS
         self.db_source_host = DB_SOURCE_HOST
         self.db_source_port = DB_SOURCE_PORT
         self.db_source_name = DB_SOURCE_NAME
 
-        self.db_destination_engine = DB_DESTINATION_ENGINE
+        self.db_destination_type = DB_DESTINATION_TYPE
         self.db_destination_user = DB_DESTINATION_USER
         self.db_destination_pass = DB_DESTINATION_PASS
         self.db_destination_host = DB_DESTINATION_HOST
         self.db_destination_port = DB_DESTINATION_PORT
         self.db_destination_name = DB_DESTINATION_NAME
 
-        if convert_from_sqlite:
+        self.setup_sessions()
+
+    def setup_sessions(self):
+        if self.convert_from_sqlite:
             self.source_engine = create_engine(DB_SQLITE_FILE, echo=DB_ECHO)
         else:
-            self.source_engine = Transport.engine(self.db_source_engine, self.db_module_string, self.db_source_user,
+            self.source_engine = Transport.engine(self.db_source_type, self.db_module_string, self.db_source_user,
                                                   self.db_source_pass, self.db_source_host,
                                                   self.db_source_port, self.db_source_name, self.echo, self.db_module)
 
-        self.destination_engine = Transport.engine(self.db_destination_engine, self.db_module_string,
+        self.destination_engine = Transport.engine(self.db_destination_type, self.db_module_string,
                                                    self.db_destination_user, self.db_destination_pass,
                                                    self.db_destination_host, self.db_destination_port,
                                                    self.db_destination_name, self.echo, self.db_module)

@@ -1,6 +1,6 @@
 # The engine types: mysql, mssql, sqlite, oracle, postgresql
-DB_SOURCE_ENGINE = 'sqlite'
-DB_DESTINATION_ENGINE = 'mysql'
+DB_SOURCE_TYPE = 'sqlite'
+DB_DESTINATION_TYPE = 'mysql'
 
 # The module types: pyodbc, pypyodbc, pypmysql, psycopg2, pg8000, mysqldb, mysqlconnector, oursql, pymssql to name a few
 import pymysql
@@ -8,7 +8,7 @@ DB_MODULE = pymysql
 DB_MODULE_STRING = 'pymysql'
 
 DB_ECHO = False
-
+CONVERT_FROM_SQLITE = True
 # sqlite://<nohostname>/<path>
 # where <path> is relative:
 # sqlite:///foo.db
