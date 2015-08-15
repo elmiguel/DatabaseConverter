@@ -12,6 +12,7 @@ class Transport:
         self.db_module = DB_MODULE
         self.echo = DB_ECHO
         self.convert_from_sqlite = CONVERT_FROM_SQLITE
+        self.db_sqlite_file = DB_SQLITE_FILE
 
         self.db_source_type = DB_SOURCE_TYPE
         self.db_source_user = DB_SOURCE_USER
@@ -29,9 +30,20 @@ class Transport:
 
         self.setup_sessions()
 
+    def change_database(self, db_name, target='destination'):
+        if target == 'destination':
+            self.db_destination_name = db_name
+        else:
+            if self.convert_from_sqlite:
+                self.db_sqlite_file = db_name
+            else:
+                self.db_source_name = db_name
+
+        self.setup_sessions()
+
     def setup_sessions(self):
         if self.convert_from_sqlite:
-            self.source_engine = create_engine(DB_SQLITE_FILE, echo=DB_ECHO)
+            self.source_engine = create_engine(self.db_sqlite_file, echo=DB_ECHO)
         else:
             self.source_engine = Transport.engine(self.db_source_type, self.db_module_string, self.db_source_user,
                                                   self.db_source_pass, self.db_source_host,
