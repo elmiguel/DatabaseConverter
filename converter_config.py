@@ -10,11 +10,11 @@ class Transport:
         if convert_from_sqlite:
             self.source_engine = create_engine(DB_SQLITE_FILE, echo=DB_ECHO)
         else:
-            self.source_engine = Transport.engine(DB_SOURCE_ENGINE, DB_MODULE, DB_SOURCE_USER,
+            self.source_engine = Transport.engine(DB_SOURCE_ENGINE, DB_MODULE_STRING, DB_SOURCE_USER,
                                                   DB_SOURCE_PASS, DB_SOURCE_HOST,
                                                   DB_SOURCE_PORT, DB_SOURCE_NAME)
 
-        self.destination_engine = Transport.engine(DB_DESTINATION_ENGINE, DB_MODULE, DB_DESTINATION_USER,
+        self.destination_engine = Transport.engine(DB_DESTINATION_ENGINE, DB_MODULE_STRING, DB_DESTINATION_USER,
                                                    DB_DESTINATION_PASS, DB_DESTINATION_HOST,
                                                    DB_DESTINATION_PORT, DB_DESTINATION_NAME)
 
@@ -47,5 +47,5 @@ class Transport:
             host=host,
             port=port,
             db=database
-        ), echo=DB_ECHO)
+        ), echo=DB_ECHO, module=DB_MODULE)
 
