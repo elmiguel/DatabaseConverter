@@ -1,9 +1,7 @@
-from pprint import pprint
 from collections import namedtuple
 from sqlalchemy import create_engine
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.sql.schema import MetaData
-# from database_credentials import *
 import configparser
 import importlib as imp
 
@@ -19,32 +17,36 @@ class Settings:
         self.config = configparser.ConfigParser()
         self.config.sections()
         self.config.read(config_file)
-        self.db_module = imp.import_module(self.config['main']['DB_MODULE'])
-        self.db_module_string = self.config['main']['DB_MODULE']
-        self.echo = True if self.config['main']['DB_ECHO'] == 'True' else False
-        self.convert_from_sqlite = self.config['main']['CONVERT_FROM_SQLITE'].replace("'", '')
-        self.db_sqlite_file = self.config['sqlite']['DB_SQLITE_FILE'].replace("'", '')
 
-        self.db_source_type = self.config['main']['DB_SOURCE_TYPE']
-        self.db_source_user = self.config['source']['DB_SOURCE_USER']
-        self.db_source_pass = self.config['source']['DB_SOURCE_PASS']
-        self.db_source_host = self.config['source']['DB_SOURCE_HOST']
-        self.db_source_port = self.config['source']['DB_SOURCE_PORT']
-        self.db_source_name = self.config['source']['DB_SOURCE_NAME']
+        self.echo = True if self.config['main']['echo'] == 'True' else False
+        self.convert_from_sqlite = self.config['main']['convert_from_sqlite'].replace("'", '')
 
-        self.db_destination_type = self.config['main']['DB_DESTINATION_TYPE']
-        self.db_destination_user = self.config['destination']['DB_DESTINATION_USER']
-        self.db_destination_pass = self.config['destination']['DB_DESTINATION_PASS']
-        self.db_destination_host = self.config['destination']['DB_DESTINATION_HOST']
-        self.db_destination_port = self.config['destination']['DB_DESTINATION_PORT']
-        self.db_destination_name = self.config['destination']['DB_DESTINATION_NAME']
+        self.db_sqlite_file = self.config['sqlite']['sqlite_file'].replace("'", '')
+
+        if not self.convert_from_sqlite:
+            self.db_source_type = self.config['source']['type']
+            self.db_source_module = imp.import_module(self.config['source']['module'])
+            self.db_source_module_string = self.config['source']['module']
+            self.db_source_user = self.config['source']['user']
+            self.db_source_pass = self.config['source']['pass']
+            self.db_source_host = self.config['source']['host']
+            self.db_source_port = self.config['source']['port']
+            self.db_source_name = self.config['source']['name']
+
+        self.db_destination_type = self.config['destination']['type']
+        self.db_destination_module = imp.import_module(self.config['destination']['module'])
+        self.db_destination_module_string = self.config['destination']['module']
+        self.db_destination_user = self.config['destination']['user']
+        self.db_destination_pass = self.config['destination']['pass']
+        self.db_destination_host = self.config['destination']['host']
+        self.db_destination_port = self.config['destination']['port']
+        self.db_destination_name = self.config['destination']['name']
 
 
 class Transport():
     def __init__(self, settings):
 
         self.settings = settings
-        pprint(self.settings.db_sqlite_file)
         self.source_engine = None
         self.destination_engine = None
         self.sessions = None
@@ -65,23 +67,21 @@ class Transport():
         if self.settings.convert_from_sqlite:
             self.source_engine = create_engine(self.settings.db_sqlite_file, echo=self.settings.echo)
         else:
-            self.source_engine = Transport.engine(self.settings.db_source_type, self.settings.db_module_string,
-                                                  self.settings.db_source_user,
-                                                  self.settings.db_source_pass, self.settings.db_source_host,
-                                                  self.settings.db_source_port, self.settings.db_source_name,
-                                                  self.settings.echo, self.settings.db_module)
+            self.source_engine = Transport.engine(self.settings.db_source_type, self.settings.db_source_module_string,
+                                                  self.settings.db_source_user, self.settings.db_source_pass,
+                                                  self.settings.db_source_host, self.settings.db_source_port,
+                                                  self.settings.db_source_name, self.settings.echo,
+                                                  self.settings.db_source_module)
 
-        self.destination_engine = Transport.engine(self.settings.db_destination_type, self.settings.db_module_string,
+        self.destination_engine = Transport.engine(self.settings.db_destination_type,
+                                                   self.settings.db_destination_module_string,
                                                    self.settings.db_destination_user, self.settings.db_destination_pass,
                                                    self.settings.db_destination_host, self.settings.db_destination_port,
                                                    self.settings.db_destination_name, self.settings.echo,
-                                                   self.settings.db_module)
+                                                   self.settings.db_destination_module)
 
         source_session = sessionmaker(bind=self.source_engine)
         destination_session = sessionmaker(bind=self.destination_engine)
-
-        # source_session.configure(bind=self.source_engine)
-        # destination_session.configure(bind=self.destination_engine)
 
         db_source = source_session()
         db_destination = destination_session()
@@ -92,7 +92,7 @@ class Transport():
 
     @staticmethod
     def engine(db_type, module, user, passwd, host, port, database, echo, db_module):
-        # if default, the remove it as it will cause connections issues fore mysql ... =/
+        # if default, then remove it as it will cause connections issues for mysql ... =/
         if db_type == 'mysql' and port == 3306:
             port = ''
         else:
@@ -121,8 +121,6 @@ class Transport():
         for name, table in source_tables.items():
             table.metadata = destination_meta
 
-        # pp(source_meta.tables)
-
         # Drop table for testing purposes
         # destination_meta.drop_all(transport.destination_engine)
 
@@ -130,8 +128,6 @@ class Transport():
         source_meta.create_all(self.destination_engine)
 
         source_data = {table: self.sessions.source.query(source_tables[table]).all() for table in source_table_names}
-
-        # pp(source_data)
 
         for table in source_table_names:
             for row in source_data[table]:
