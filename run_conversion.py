@@ -1,13 +1,13 @@
 from db_converter import Transport, Settings
 
 # Setup the settings file and load it: Empty will use the default.ini file!
-test = Settings()
+# test = Settings()
 
 # Initialize the transport
-transport = Transport(test)
+# transport = Transport(test)
 
 # Run the migration
-transport.run()
+# transport.run()
 
 bba_data = Settings('sqlite_to_mysql_bba_data.ini')
 transport = Transport(bba_data)

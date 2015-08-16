@@ -19,7 +19,7 @@ class Settings:
         self.config.read(config_file)
 
         self.echo = True if self.config['main']['echo'] == 'True' else False
-        self.convert_from_sqlite = self.config['main']['convert_from_sqlite'].replace("'", '')
+        self.convert_from_sqlite = True if self.config['main']['convert_from_sqlite'] == 'True' else False
 
         self.db_sqlite_file = self.config['sqlite']['sqlite_file'].replace("'", '')
 
