@@ -20,8 +20,7 @@ class Settings:
 
         self.echo = True if self.config['main']['echo'] == 'True' else False
         self.convert_from_sqlite = True if self.config['main']['convert_from_sqlite'] == 'True' else False
-
-        self.db_sqlite_file = self.config['sqlite']['sqlite_file'].replace("'", '')
+        self.convert_to_sqlite = True if self.config['main']['convert_to_sqlite'] == 'True' else False
 
         if not self.convert_from_sqlite:
             self.db_source_type = self.config['source']['type']
@@ -32,15 +31,20 @@ class Settings:
             self.db_source_host = self.config['source']['host']
             self.db_source_port = self.config['source']['port']
             self.db_source_name = self.config['source']['name']
+        else:
+            self.db_source_sqlite_file = self.config['source']['sqlite_file'].replace("'", '')
 
-        self.db_destination_type = self.config['destination']['type']
-        self.db_destination_module = imp.import_module(self.config['destination']['module'])
-        self.db_destination_module_string = self.config['destination']['module']
-        self.db_destination_user = self.config['destination']['user']
-        self.db_destination_pass = self.config['destination']['pass']
-        self.db_destination_host = self.config['destination']['host']
-        self.db_destination_port = self.config['destination']['port']
-        self.db_destination_name = self.config['destination']['name']
+        if not self.convert_to_sqlite:
+            self.db_destination_type = self.config['destination']['type']
+            self.db_destination_module = imp.import_module(self.config['destination']['module'])
+            self.db_destination_module_string = self.config['destination']['module']
+            self.db_destination_user = self.config['destination']['user']
+            self.db_destination_pass = self.config['destination']['pass']
+            self.db_destination_host = self.config['destination']['host']
+            self.db_destination_port = self.config['destination']['port']
+            self.db_destination_name = self.config['destination']['name']
+        else:
+            self.db_destination_sqlite_file = self.config['destination']['sqlite_file'].replace("'", '')
 
 
 class Transport():
@@ -65,7 +69,7 @@ class Transport():
 
     def setup_sessions(self):
         if self.settings.convert_from_sqlite:
-            self.source_engine = create_engine(self.settings.db_sqlite_file, echo=self.settings.echo)
+            self.source_engine = create_engine(self.settings.db_source_sqlite_file, echo=self.settings.echo)
         else:
             self.source_engine = Transport.engine(self.settings.db_source_type, self.settings.db_source_module_string,
                                                   self.settings.db_source_user, self.settings.db_source_pass,
@@ -73,12 +77,17 @@ class Transport():
                                                   self.settings.db_source_name, self.settings.echo,
                                                   self.settings.db_source_module)
 
-        self.destination_engine = Transport.engine(self.settings.db_destination_type,
-                                                   self.settings.db_destination_module_string,
-                                                   self.settings.db_destination_user, self.settings.db_destination_pass,
-                                                   self.settings.db_destination_host, self.settings.db_destination_port,
-                                                   self.settings.db_destination_name, self.settings.echo,
-                                                   self.settings.db_destination_module)
+        if self.settings.convert_to_sqlite:
+            self.destination_engine = create_engine(self.settings.db_destination_sqlite_file, echo=self.settings.echo)
+        else:
+            self.destination_engine = Transport.engine(self.settings.db_destination_type,
+                                                       self.settings.db_destination_module_string,
+                                                       self.settings.db_destination_user,
+                                                       self.settings.db_destination_pass,
+                                                       self.settings.db_destination_host,
+                                                       self.settings.db_destination_port,
+                                                       self.settings.db_destination_name, self.settings.echo,
+                                                       self.settings.db_destination_module)
 
         source_session = sessionmaker(bind=self.source_engine)
         destination_session = sessionmaker(bind=self.destination_engine)

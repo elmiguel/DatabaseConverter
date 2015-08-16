@@ -9,6 +9,14 @@ from db_converter import Transport, Settings
 # Run the migration
 # transport.run()
 
-bba_data = Settings('sqlite_to_mysql_bba_data.ini')
-transport = Transport(bba_data)
+# bba_data = Settings('sqlite_to_mysql_bba_data.ini')
+# transport = Transport(bba_data)
+# transport.run()
+
+# test_dest = Settings('sqlite_to_sqlite.ini')
+# transport = Transport(test_dest)
+# transport.run()
+
+test_dest = Settings('mysql_to_sqlite.ini')
+transport = Transport(test_dest)
 transport.run()
