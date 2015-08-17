@@ -1,22 +1,25 @@
 from db_converter import Transport, Settings
 
 # Setup the settings file and load it: Empty will use the default.ini file!
-# test = Settings()
-
+test = Settings()
 # Initialize the transport
-# transport = Transport(test)
-
+transport = Transport(test)
 # Run the migration
-# transport.run()
-
-# bba_data = Settings('sqlite_to_mysql_bba_data.ini')
-# transport = Transport(bba_data)
-# transport.run()
-
-# test_dest = Settings('sqlite_to_sqlite.ini')
-# transport = Transport(test_dest)
-# transport.run()
-
-test_dest = Settings('mysql_to_sqlite.ini')
-transport = Transport(test_dest)
 transport.run()
+print('default (sqlite_to_mysql): complete!')
+
+# Fails! Worked in Mac Failed on Linux
+mysql_to_mysql = Settings('mysql_to_mysql.ini')
+transport = Transport(mysql_to_mysql)
+transport.run()
+print('mysql_to_mysql: complete!')
+
+mysql_to_sqlite = Settings('mysql_to_sqlite.ini')
+transport = Transport(mysql_to_sqlite)
+transport.run()
+print('mysql_to_sqlite: complete!')
+
+sqlite_to_sqlite = Settings('sqlite_to_sqlite.ini')
+transport = Transport(sqlite_to_sqlite)
+transport.run()
+print('sqlite_to_sqlite: complete!')
