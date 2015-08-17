@@ -1,12 +1,15 @@
+from pprint import pprint
 from collections import namedtuple
 from sqlalchemy import create_engine
 from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.sql.schema import MetaData
+from sqlalchemy.exc import StatementError
 import configparser
 import importlib as imp
 
 # TODO: Make it so that the database source and destination type are interchangeable
 # meaning that either can be what server type the end user want
+import sys
 
 
 class Settings:
@@ -47,7 +50,11 @@ class Settings:
             self.db_destination_sqlite_file = self.config['destination']['sqlite_file'].replace("'", '')
 
 
-class Transport():
+        # allow to exclude certain from transfer
+        self.exclude_data = {}
+
+
+class Transport:
     def __init__(self, settings):
 
         self.settings = settings
@@ -129,9 +136,15 @@ class Transport():
         destination_meta = MetaData(bind=self.destination_engine)
         for name, table in source_tables.items():
             table.metadata = destination_meta
+            if name in self.settings.exclude_data.keys():
+                table.__mapper_args__ = {'exclude_properties': self.settings.exclude_data[name]}
 
         # Drop table for testing purposes
-        # destination_meta.drop_all(transport.destination_engine)
+        # destination_meta.drop_all(self.destination_engine)
+        for table in source_table_names:
+            self.sessions.destination.execute('DROP TABLE {table};'.format(table=table))
+            self.sessions.destination.commit()
+            print('DROPPED TABLE {table}'.format(table=table))
 
         # Begin migration
         source_meta.create_all(self.destination_engine)
@@ -139,8 +152,16 @@ class Transport():
         source_data = {table: self.sessions.source.query(source_tables[table]).all() for table in source_table_names}
 
         for table in source_table_names:
+            print("Migrating:", table)
+            # if table in self.settings.exclude_data.keys():
+            #     pprint(source_tables[table].__mapper_args__)
+            #     exit(1)
             for row in source_data[table]:
-                self.sessions.destination.execute(source_tables[table].insert(row))
+                try:
+                    self.sessions.destination.execute(source_tables[table].insert(row))
+                except StatementError:
+                    print('Bad data in table: ', table, 'row data:\n', row[0], 'Error:', sys.exc_info()[0])
+            print('Data for:', table, 'added to the queue..')
 
         self.sessions.destination.commit()
-
+        print('Migration Complete!')
